@@ -6,36 +6,126 @@ type QuizQuestion = {
   answerIndex: number
 }
 
-async function postJson<T>(url: string, body: object) {
-  const response = await fetch(url, {
+function fallbackPlan(topic: string) {
+  return [
+    `Fallback 7-Day Plan for ${topic}`,
+    'Day 1: Learn core definitions and make 10 flashcards.',
+    'Day 2: Practice basic questions for 30 minutes.',
+    'Day 3: Review mistakes and summarize weak points.',
+    'Day 4: Solve medium-level practice tasks.',
+    'Day 5: Timed practice with self-review.',
+    'Day 6: Revise weak areas using active recall.',
+    'Day 7: Final quick revision and mini mock test.',
+  ].join('\n')
+}
+
+function fallbackQuiz(topic: string): QuizQuestion[] {
+  return [
+    {
+      question: `What is the best first step to study ${topic} effectively?`,
+      options: ['Skip basics', 'Build core understanding', 'Only memorize answers', 'Avoid practice'],
+      answerIndex: 1,
+    },
+    {
+      question: `Which method improves long-term memory most?`,
+      options: ['Passive rereading', 'Active recall', 'No revision', 'Last-minute cramming'],
+      answerIndex: 1,
+    },
+    {
+      question: `How should you use wrong answers?`,
+      options: ['Ignore them', 'Track and review them', 'Delete them', 'Avoid hard questions'],
+      answerIndex: 1,
+    },
+    {
+      question: `What is ideal for exam preparation?`,
+      options: ['One long session', 'Short focused sessions', 'No plan', 'Only videos'],
+      answerIndex: 1,
+    },
+    {
+      question: `How should a study session end?`,
+      options: ['Immediately stop', 'Quick self-test', 'Start random topic', 'Skip recap'],
+      answerIndex: 1,
+    },
+  ]
+}
+
+const GEMINI_MODEL = 'gemini-2.5-flash'
+const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent`
+
+async function callGemini(prompt: string, apiKey: string) {
+  const response = await fetch(GEMINI_URL, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(body),
+    headers: {
+      'Content-Type': 'application/json',
+      'X-goog-api-key': apiKey,
+    },
+    body: JSON.stringify({
+      contents: [{ role: 'user', parts: [{ text: prompt }] }],
+      generationConfig: {
+        temperature: 0.6,
+        topP: 0.95,
+        maxOutputTokens: 900,
+      },
+    }),
   })
 
   const raw = await response.text()
-  let data: (T & { error?: string }) | null = null
+  if (!response.ok) {
+    throw new Error(`Gemini request failed (${response.status}).`)
+  }
+
+  let payload: {
+    candidates?: Array<{ content?: { parts?: Array<{ text?: string }> } }>
+  } | null = null
 
   if (raw.trim()) {
     try {
-      data = JSON.parse(raw) as T & { error?: string }
+      payload = JSON.parse(raw) as {
+        candidates?: Array<{ content?: { parts?: Array<{ text?: string }> } }>
+      }
     } catch {
-      throw new Error('Server returned invalid JSON. Please try again.')
+      throw new Error('Gemini returned invalid JSON.')
     }
   }
 
-  if (!response.ok) {
-    throw new Error(data?.error || 'Request failed')
+  const text = payload?.candidates?.[0]?.content?.parts?.[0]?.text?.trim()
+  if (!text) {
+    throw new Error('Gemini returned an empty response.')
   }
 
-  if (!data) {
-    throw new Error('Server returned an empty response. Please try again.')
+  return text
+}
+
+function parseQuizText(raw: string): QuizQuestion[] {
+  let parsed: { questions?: QuizQuestion[] } | null = null
+
+  try {
+    parsed = JSON.parse(raw) as { questions?: QuizQuestion[] }
+  } catch {
+    const objectLike = raw.match(/\{[\s\S]*\}/)
+    if (objectLike?.[0]) {
+      try {
+        parsed = JSON.parse(objectLike[0]) as { questions?: QuizQuestion[] }
+      } catch {
+        return []
+      }
+    }
   }
 
-  return data
+  const questions = Array.isArray(parsed?.questions) ? parsed.questions : []
+  return questions.filter((question) => {
+    const hasQuestion = typeof question.question === 'string' && question.question.trim().length > 0
+    const hasOptions =
+      Array.isArray(question.options) &&
+      question.options.length === 4 &&
+      question.options.every((option) => typeof option === 'string' && option.trim().length > 0)
+    const hasAnswer = Number.isInteger(question.answerIndex) && question.answerIndex >= 0 && question.answerIndex <= 3
+    return hasQuestion && hasOptions && hasAnswer
+  })
 }
 
 function App() {
+  const apiKey = (import.meta.env.VITE_GEMINI_API_KEY || '').trim()
   const [topic, setTopic] = useState('')
   const [plan, setPlan] = useState('')
   const [quizQuestions, setQuizQuestions] = useState<QuizQuestion[]>([])
@@ -62,13 +152,28 @@ function App() {
       return
     }
 
+    if (!apiKey) {
+      setError('App is not configured. Missing VITE_GEMINI_API_KEY.')
+      return
+    }
+
     setIsLoadingPlan(true)
     try {
-      const data = await postJson<{ plan: string; warning?: string }>('/api/plan', { topic: topic.trim() })
-      setPlan(data.plan)
-      setWarning(data.warning || '')
+      const prompt = `You are a study coach.
+Create a practical 7-day study plan for this topic: ${topic.trim()}
+Rules:
+- Give one section per day (Day 1 to Day 7)
+- For each day include focus, 2 tasks, and one quick revision check
+- Keep language simple
+- Under 220 words total`
+
+      const text = await callGemini(prompt, apiKey)
+      setPlan(text)
+      setWarning('')
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : 'Failed to generate plan.')
+      setPlan(fallbackPlan(topic.trim()))
+      setWarning(caught instanceof Error ? `${caught.message} Using fallback plan.` : 'Using fallback plan due to API issue.')
+      setError('')
     } finally {
       setIsLoadingPlan(false)
     }
@@ -82,15 +187,47 @@ function App() {
       return
     }
 
+    if (!apiKey) {
+      setError('App is not configured. Missing VITE_GEMINI_API_KEY.')
+      return
+    }
+
     setIsLoadingQuiz(true)
     setShowResult(false)
     try {
-      const data = await postJson<{ questions: QuizQuestion[]; warning?: string }>('/api/quiz', { topic: topic.trim() })
-      setQuizQuestions(data.questions)
+      const prompt = `Generate 5 multiple choice questions for topic: ${topic.trim()}
+Return strict JSON only in this shape:
+{
+  "questions": [
+    {
+      "question": "...",
+      "options": ["...", "...", "...", "..."],
+      "answerIndex": 0
+    }
+  ]
+}
+Rules:
+- Exactly 5 questions
+- Exactly 4 options each
+- answerIndex must be 0,1,2,3
+- No markdown`
+
+      const text = await callGemini(prompt, apiKey)
+      const questions = parseQuizText(text)
+
+      if (questions.length === 0) {
+        setQuizQuestions(fallbackQuiz(topic.trim()))
+        setWarning('Gemini quiz format was invalid. Using fallback quiz.')
+      } else {
+        setQuizQuestions(questions.slice(0, 5))
+        setWarning('')
+      }
       setSelectedAnswers({})
-      setWarning(data.warning || '')
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : 'Failed to generate quiz.')
+      setQuizQuestions(fallbackQuiz(topic.trim()))
+      setSelectedAnswers({})
+      setWarning(caught instanceof Error ? `${caught.message} Using fallback quiz.` : 'Using fallback quiz due to API issue.')
+      setError('')
     } finally {
       setIsLoadingQuiz(false)
     }

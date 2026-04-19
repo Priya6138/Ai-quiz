@@ -5,13 +5,12 @@ React app where user enters one topic and uses AI to:
 1. Generate a study plan
 2. Generate and play a quiz
 
-Gemini API is called from backend (Express), not from frontend input.
+Gemini API is called directly from frontend using build-time environment variable.
 
 ## Stack
 
-- React + TypeScript + Vite (frontend)
-- Node + Express (backend)
-- Google Gemini free model: `gemini-2.0-flash`
+- React + TypeScript + Vite
+- Google Gemini model: `gemini-2.5-flash`
 
 ## Run locally
 
@@ -27,18 +26,25 @@ npm install
 cp .env.example .env
 ```
 
-Then set `GEMINI_API_KEY` in `.env`.
+Then set `VITE_GEMINI_API_KEY` in `.env`.
 
-3. Start frontend + backend
+3. Start frontend
 
 ```bash
 npm run dev
 ```
-
-Frontend runs on Vite, backend runs on `http://localhost:8787`.
 
 ## Build
 
 ```bash
 npm run build
 ```
+
+## Vercel Deployment (Single App)
+
+1. Import this repo in Vercel.
+2. Add environment variable in Vercel project settings:
+`VITE_GEMINI_API_KEY=your_key`
+3. Redeploy.
+
+Users will only enter topic. No API key field is shown in UI.
