@@ -11,6 +11,9 @@ function fallbackPlan(topic: string) {
     `Fallback 7-Day Plan for ${topic}`,
     'Day 1: Learn core definitions and make 10 flashcards.',
     'Day 2: Practice basic questions for 30 minutes.',
+
+
+    
     'Day 3: Review mistakes and summarize weak points.',
     'Day 4: Solve medium-level practice tasks.',
     'Day 5: Timed practice with self-review.',
