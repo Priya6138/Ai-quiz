@@ -1,0 +1,273 @@
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&display=swap');
+
+:root {
+  --bg-main: #f8f3eb;
+  --bg-card: #fffdfa;
+  --bg-accent: #f5dfb6;
+  --text-main: #1f1a16;
+  --text-soft: #5f554f;
+  --border: #d9ccbe;
+  --brand: #0f7b6c;
+  --brand-ink: #0a4c43;
+  --danger: #b7481f;
+  --shadow: 0 14px 32px rgba(20, 15, 11, 0.1);
+
+  font-family: 'Space Grotesk', 'Segoe UI', sans-serif;
+  font-size: 16px;
+  line-height: 1.45;
+  color: var(--text-main);
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background:
+    radial-gradient(circle at 10% 10%, #f2d8a0 0%, transparent 35%),
+    radial-gradient(circle at 85% 8%, #c9ead8 0%, transparent 30%),
+    var(--bg-main);
+}
+
+#root {
+  min-height: 100vh;
+  width: 100%;
+}
+
+.app-shell {
+  width: min(1080px, calc(100% - 2rem));
+  margin: 1.25rem auto 2rem;
+  display: grid;
+  gap: 1rem;
+  animation: rise-in 420ms ease-out;
+}
+
+.hero-card,
+.input-card,
+.output-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  box-shadow: var(--shadow);
+}
+
+.hero-card {
+  padding: 1.5rem;
+  background: linear-gradient(145deg, #fef9f2 0%, #fbe7c9 100%);
+}
+
+.eyebrow {
+  margin: 0;
+  text-transform: uppercase;
+  letter-spacing: 0.06rem;
+  color: var(--brand-ink);
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+h1,
+h2 {
+  margin: 0;
+  color: var(--text-main);
+}
+
+h1 {
+  margin-top: 0.3rem;
+  font-family: 'Source Serif 4', Georgia, serif;
+  font-size: clamp(2rem, 6.8vw, 3.4rem);
+  line-height: 1.03;
+}
+
+h2 {
+  font-size: 1.2rem;
+}
+
+.hero-copy {
+  margin: 0.7rem 0 0;
+  color: var(--text-soft);
+  max-width: 68ch;
+}
+
+.tool-grid {
+  display: grid;
+  gap: 1rem;
+}
+
+.tool-grid {
+  grid-template-columns: 1.1fr 1fr;
+}
+
+.input-card,
+.output-card {
+  padding: 1rem;
+}
+
+.input-card {
+  display: grid;
+  gap: 0.8rem;
+}
+
+label {
+  display: grid;
+  gap: 0.35rem;
+  font-size: 0.92rem;
+  color: var(--text-soft);
+}
+
+input,
+textarea,
+button {
+  font: inherit;
+}
+
+input,
+textarea {
+  padding: 0.68rem 0.72rem;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: #ffffff;
+  color: var(--text-main);
+}
+
+textarea {
+  resize: vertical;
+}
+
+input:focus,
+textarea:focus {
+  outline: 2px solid color-mix(in srgb, var(--brand) 42%, white);
+  outline-offset: 1px;
+}
+
+.button-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.55rem;
+}
+
+button {
+  border: none;
+  border-radius: 999px;
+  padding: 0.64rem 0.95rem;
+  background: var(--brand);
+  color: #ffffff;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 120ms ease, background 120ms ease;
+}
+
+button:hover {
+  background: var(--brand-ink);
+  transform: translateY(-1px);
+}
+
+button:disabled {
+  opacity: 0.62;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.output-card {
+  display: block;
+  min-height: 380px;
+}
+
+pre {
+  margin: 0;
+  padding: 0.9rem;
+  border-radius: 10px;
+  border: 1px dashed var(--border);
+  background: #fff9ee;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  font-size: 0.92rem;
+}
+
+.status-text {
+  margin: 0;
+  color: var(--text-soft);
+}
+
+.error-text {
+  margin: 0;
+  color: var(--danger);
+  font-weight: 600;
+}
+
+.quiz-list {
+  display: grid;
+  gap: 0.85rem;
+  margin-top: 0.8rem;
+}
+
+.quiz-card {
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 0.8rem;
+  background: #fff9ee;
+}
+
+.quiz-question {
+  margin: 0;
+  font-weight: 600;
+}
+
+.quiz-options {
+  margin-top: 0.6rem;
+  display: grid;
+  gap: 0.45rem;
+}
+
+.option-btn {
+  text-align: left;
+  width: 100%;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: #ffffff;
+  color: var(--text-main);
+}
+
+.option-btn.selected {
+  border-color: var(--brand);
+}
+
+.option-btn.right {
+  border-color: #2f8f46;
+  background: #ebfaef;
+}
+
+.option-btn.wrong {
+  border-color: #c2512a;
+  background: #fff0ea;
+}
+
+.score-text {
+  margin: 0;
+  font-weight: 700;
+}
+
+@keyframes rise-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (max-width: 980px) {
+  .tool-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .output-card {
+    min-height: 320px;
+  }
+}
